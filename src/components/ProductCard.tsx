@@ -4,9 +4,11 @@ import { Product } from "../types/product";
 import { formatRupiah } from "../utils/format";
 
 export default function ProductCard({ item }: { item: Product }) {
+    const imageUri = item.image ?? `https://picsum.photos/seed/${item.id}/200`;
+
     return (
         <View style={styles.card}>
-            <Image source={{ uri: `https://picsum.photos/seed/${item.id}/200` }} style={styles.cardImage} />
+            <Image source={{ uri: imageUri }} style={styles.cardImage} resizeMode="contain" />
             <View style={styles.cardInfo}>
                 <Text style={styles.productName}>{item.name}</Text>
                 <Text style={styles.productPrice}>{formatRupiah(item.price)}</Text>
