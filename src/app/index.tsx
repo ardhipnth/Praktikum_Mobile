@@ -1,6 +1,13 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import ProductCard from "../components/ProductCard";
 import { styles } from "../constants/styles";
 import { products } from "../data/products";
@@ -10,7 +17,9 @@ const categories: Category[] = ["buku", "elektronik", "pakaian", "perabot"];
 
 export default function Index() {
   const [search, setSearch] = useState<string>("");
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null,
+  );
   const [loading, setLoading] = useState<boolean>(true);
 
   // useEffect tanpa dependency: jalan sekali saat halaman pertama tampil
@@ -21,18 +30,23 @@ export default function Index() {
 
   // useEffect dengan dependency: jalan setiap search atau kategori berubah
   useEffect(() => {
-    console.log(`Filter -> cari: "${search}", kategori: ${selectedCategory ?? "semua"}`);
+    console.log(
+      `Filter -> cari: "${search}", kategori: ${selectedCategory ?? "semua"}`,
+    );
   }, [search, selectedCategory]);
 
   const filteredProducts = products.filter((p) => {
     const matchName = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = selectedCategory === null || p.category === selectedCategory;
+    const matchCategory =
+      selectedCategory === null || p.category === selectedCategory;
     return matchName && matchCategory;
   });
 
   return (
     <View style={[styles.container, { paddingTop: 12 }]}>
-      <Text style={styles.subtitle}>Jual beli barang bekas antar mahasiswa</Text>
+      <Text style={styles.subtitle}>
+        Jual beli barang bekas antar mahasiswa
+      </Text>
 
       <TextInput
         placeholder="Cari barang..."
@@ -45,10 +59,20 @@ export default function Index() {
         {categories.map((cat) => (
           <Pressable
             key={cat}
-            style={[styles.chip, selectedCategory === cat && { backgroundColor: "#2563eb" }]}
-            onPress={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
+            style={[
+              styles.chip,
+              selectedCategory === cat && { backgroundColor: "#2563eb" },
+            ]}
+            onPress={() =>
+              setSelectedCategory(selectedCategory === cat ? null : cat)
+            }
           >
-            <Text style={[styles.chipText, selectedCategory === cat && { color: "white" }]}>
+            <Text
+              style={[
+                styles.chipText,
+                selectedCategory === cat && { color: "white" },
+              ]}
+            >
               {cat}
             </Text>
           </Pressable>
@@ -61,7 +85,9 @@ export default function Index() {
         <FlatList
           data={filteredProducts}
           keyExtractor={(item) => item.id}
-          ListEmptyComponent={<Text style={styles.subtitle}>Barang tidak ditemukan</Text>}
+          ListEmptyComponent={
+            <Text style={styles.subtitle}>Barang tidak ditemukan</Text>
+          }
           renderItem={({ item }) => (
             <Pressable onPress={() => router.push(`/produk/${item.id}`)}>
               <ProductCard item={item} />
