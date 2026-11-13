@@ -1,17 +1,38 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
-import { Alert, Image, Pressable, ScrollView, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from "react-native";
 import { detailStyles } from "../../constants/detailStyles";
+import { isFavorite, toggleFavorite } from "../../services/favoriteService";
+import { getProductDetail } from "../../services/productService";
+import { Product } from "../../types/product";
 import { formatRupiah } from "../../utils/format";
-import { getProductById } from "../../utils/products";
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [isFavorite, setIsFavorite] = useState<boolean>(false);
-  const product = getProductById(id);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [favorite, setFavorite] = useState<boolean>(false);
 
-  // Kembali dengan aman: kalau tidak ada halaman sebelumnya, ganti ke halaman utama
+  // Ambil detail barang (pakai .then / .catch / .finally)
+  useEffect(() => {
+    getProductDetail(id)
+      .then((result) => setProduct(result))
+      .catch((err) => setError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  // Baca status favorit yang tersimpan (inilah perbaikan bug favorit)
+  useEffect(() => {
+    isFavorite(id).then((result) => setFavorite(result));
+  }, [id]);
+
+  const handleToggleFavorite = async () => {
+    const nowFavorite = await toggleFavorite(id);
+    setFavorite(nowFavorite);
+  };
+
   const goBack = () => {
     if (router.canGoBack()) {
       router.back();
@@ -20,10 +41,18 @@ export default function ProductDetail() {
     }
   };
 
-  if (!product) {
+  if (loading) {
     return (
       <View style={detailStyles.center}>
-        <Text style={detailStyles.name}>Barang tidak ditemukan</Text>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <View style={detailStyles.center}>
+        <Text style={detailStyles.name}>{error ?? "Barang tidak ditemukan"}</Text>
         <Pressable style={detailStyles.backButton} onPress={goBack}>
           <Text style={detailStyles.buttonText}>Kembali</Text>
         </Pressable>
@@ -34,9 +63,7 @@ export default function ProductDetail() {
   return (
     <ScrollView style={detailStyles.container}>
       <Image
-        source={{
-          uri: product.image ?? `https://picsum.photos/seed/${product.id}/400`,
-        }}
+        source={{ uri: product.image ?? `https://picsum.photos/seed/${product.id}/400` }}
         style={detailStyles.image}
         resizeMode="contain"
       />
@@ -44,32 +71,22 @@ export default function ProductDetail() {
         <Text style={detailStyles.name}>{product.name}</Text>
         <Text style={detailStyles.price}>{formatRupiah(product.price)}</Text>
         <Text style={detailStyles.seller}>Penjual: {product.seller}</Text>
-        {product.note && (
-          <Text style={detailStyles.note}>Catatan: {product.note}</Text>
-        )}
+        {product.note && <Text style={detailStyles.note}>Catatan: {product.note}</Text>}
 
-        <Pressable
-          style={detailStyles.favButton}
-          onPress={() => setIsFavorite(!isFavorite)}
-        >
+        <Pressable style={detailStyles.favButton} onPress={handleToggleFavorite}>
           <Ionicons
-            name={isFavorite ? "heart" : "heart-outline"}
+            name={favorite ? "heart" : "heart-outline"}
             size={28}
-            color={isFavorite ? "red" : "gray"}
+            color={favorite ? "red" : "gray"}
           />
           <Text style={detailStyles.favText}>
-            {isFavorite ? "Disimpan di favorit" : "Simpan ke favorit"}
+            {favorite ? "Disimpan di favorit" : "Simpan ke favorit"}
           </Text>
         </Pressable>
 
         <Pressable
           style={detailStyles.contactButton}
-          onPress={() =>
-            Alert.alert(
-              "Hubungi Penjual",
-              `Chat ${product.seller} tentang ${product.name}?`,
-            )
-          }
+          onPress={() => Alert.alert("Hubungi Penjual", `Chat ${product.seller} tentang ${product.name}?`)}
         >
           <Text style={detailStyles.buttonText}>Hubungi Penjual</Text>
         </Pressable>
