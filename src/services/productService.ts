@@ -2,6 +2,7 @@ import { products as localProducts } from "../data/products";
 import { ApiProduct, ApiProductList } from "../types/api";
 import { Category, Product } from "../types/product";
 import { delay } from "../utils/delay";
+import { getListingById, getListings } from "./listingService";
 
 const BASE_URL = "https://dummyjson.com";
 const KURS = 18200;
@@ -63,9 +64,10 @@ export const fetchApiProducts = (): Promise<Product[]> => {
 };
 
 export const getAllProducts = async (): Promise<Product[]> => {
-    await delay(500); // simulasi server agak lambat
+    await delay(500);
     const apiProducts = await fetchApiProducts();
-    return localProducts.concat(apiProducts);
+    const listings = await getListings();
+    return listings.concat(localProducts, apiProducts);
 };
 
 export const getProductDetail = async (id: string): Promise<Product> => {
@@ -86,6 +88,8 @@ export const getProductDetail = async (id: string): Promise<Product> => {
             return product;
         }
     }
-
+    if (id.startsWith("db-")) {
+        return await getListingById(id.replace("db-", ""));
+    }
     throw new Error("Barang tidak ditemukan");
 };

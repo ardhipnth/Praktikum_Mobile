@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, Text, TextInput, View } from "react-native";
 import ErrorMessage from "../components/ErrorMessage";
 import Loading from "../components/Loading";
@@ -18,10 +18,11 @@ export default function Index() {
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState<number>(0);
 
-  // Ambil data dari API setiap halaman dibuka, atau setiap reloadKey berubah (tombol "Coba Lagi")
   useEffect(() => {
     const load = async () => {
-      setLoading(true);
+      if (items.length === 0) {
+        setLoading(true); // spinner hanya untuk pemuatan pertama
+      }
       setError(null);
       try {
         const data = await getAllProducts();
@@ -33,7 +34,20 @@ export default function Index() {
       }
     };
     load();
-  }, [reloadKey]);
+  }, [reloadKey, items.length]);
+
+  const firstFocus = useRef<boolean>(true);
+
+  // Muat ulang daftar setiap beranda kembali ditampilkan (misalnya setelah menjual barang)
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false; // pemuatan pertama sudah ditangani useEffect
+        return;
+      }
+      setReloadKey((k) => k + 1);
+    }, [])
+  );
 
   useEffect(() => {
     console.log(`Filter -> cari: "${search}", kategori: ${selectedCategory ?? "semua"}`);
